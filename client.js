@@ -3,16 +3,15 @@ const fs = require('fs');
 const fsPromises = require('fs/promises');
 const path = require('path');
 const helper = require('./helper');
+const config = require('./config');
 
-const config = {
-  CONNECTION_OBJECT: {
-    host: '::1', // ::1 ==>  localhost (IPv6)
-    port: 7777,
-    timeout: 5000,
-  },
+const CONNECTION_OBJECT = {
+  host: config.HOST,
+  port: config.PORT,
+  timeout: 5000,
 };
 
-const socket = net.createConnection(config.CONNECTION_OBJECT, async () => {
+const socket = net.createConnection(CONNECTION_OBJECT, async () => {
   const filePath = process.argv[2];
   const fileName = path.basename(filePath);
   const fileSize = (await fsPromises.stat(filePath)).size;

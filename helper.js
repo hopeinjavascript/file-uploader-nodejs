@@ -12,11 +12,17 @@ const moveCursor = (dx, dy) => {
   });
 };
 
-module.exports.calculatePercentage = async function calculatePercentage(
+module.exports.createDirectoryIfDoesntExist = (path) => {
+  if (!fs.existsSync(path)) {
+    fs.mkdirSync(path, { recursive: true });
+  }
+};
+
+module.exports.calculatePercentage = async (
   newPercentageUploaded,
   percentageUploaded,
   fileName
-) {
+) => {
   if (newPercentageUploaded !== percentageUploaded) {
     percentageUploaded = newPercentageUploaded;
     await moveCursor(0, -1);

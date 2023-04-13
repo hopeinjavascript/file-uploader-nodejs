@@ -1,13 +1,12 @@
 const net = require('net');
 const fs = require('fs');
 const helper = require('./helper');
-
-const config = {
-  PORT: 7777,
-  HOST: '::1', // ::1 ==>  localhost (IPv6)
-};
+const config = require('./config');
 
 const server = net.createServer();
+
+// on init
+helper.createDirectoryIfDoesntExist(config.STORAGE_PATH);
 
 // socket => client's endpoint => duplex stream
 server.on('connection', (socket) => {
