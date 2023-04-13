@@ -1,5 +1,6 @@
 const net = require('net');
 const fs = require('fs');
+const helper = require('./helper');
 
 const config = {
   PORT: 7777,
@@ -12,13 +13,16 @@ const server = net.createServer();
 server.on('connection', (socket) => {
   console.count('New connection received');
   let ws;
+  let metaData;
+  let bytesUploaded = 0;
+  let percentageUploaded = 0;
 
-  socket.on('data', (data) => {
+  socket.on('data', async (data) => {
     if (!ws) {
       // (1.)
       // in first socket.write from client(s) we are only going to receive metadata (we chose to send)
       // such as file name, file size. There is no actual data to write to the file.
-      const metaData = JSON.parse(data);
+      metaData = JSON.parse(data);
 
       console.log(`Uploading ${metaData.fileName}...`);
 
@@ -33,20 +37,33 @@ server.on('connection', (socket) => {
 
       // "drain" event is always on writable stream
       ws.on('drain', () => {
-        console.log('drain-1');
+        // console.log('drain-1');
         socket.resume(); // "resume" event is always on readable stream
       });
 
       ws.on('error', console.error);
     } else {
       if (!ws.write(data)) socket.pause(); // data => Buffer & "pause" event is always on readable stream
+      bytesUploaded += data.length;
+
+      let newPercentageUploaded = (
+        (bytesUploaded / metaData.fileSize) *
+        100
+      ).toFixed(2);
+
+      // "newPercentageUploaded" because of Closures & many "data" events are getting fired
+      helper.calculatePercentage(
+        newPercentageUploaded,
+        percentageUploaded,
+        metaData.fileName
+      );
     }
   });
 
   socket.on('close', () => {
     console.log(`Server: Connection closed!`);
     if (ws) ws.close();
-    process.exit(0); // 0 is for success & if not specified, it will use the code of process.exitCode property
+    // process.exit(0); // 0 is for success & if not specified, it will use the code of process.exitCode property
   });
 
   socket.on('end', () => {

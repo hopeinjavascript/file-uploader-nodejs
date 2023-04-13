@@ -1,6 +1,8 @@
 const net = require('net');
 const fs = require('fs');
+const fsPromises = require('fs/promises');
 const path = require('path');
+const helper = require('./helper');
 
 const config = {
   CONNECTION_OBJECT: {
@@ -13,13 +15,30 @@ const config = {
 const socket = net.createConnection(config.CONNECTION_OBJECT, async () => {
   const filePath = process.argv[2];
   const fileName = path.basename(filePath);
+  const fileSize = (await fsPromises.stat(filePath)).size;
+
+  let bytesUploaded = 0;
+  let percentageUploaded = 0;
 
   const rs = fs.createReadStream(filePath);
 
-  socket.write(`${JSON.stringify({ fileName })}`);
+  socket.write(`${JSON.stringify({ fileName, fileSize })}`);
 
-  rs.on('data', (data) => {
+  console.log(); // * if in case... while moving the cursor up the line above it which we actually need also gets cleared!
+
+  rs.on('data', async (data) => {
     if (!socket.write(data)) rs.pause();
+
+    bytesUploaded += data.length;
+
+    const newPercentageUploaded = ((bytesUploaded / fileSize) * 100).toFixed(2);
+
+    // "newPercentageUploaded" because of Closures & many "data" events are getting fired
+    helper.calculatePercentage(
+      newPercentageUploaded,
+      percentageUploaded,
+      fileName
+    );
   });
 
   socket.on('drain', () => {
