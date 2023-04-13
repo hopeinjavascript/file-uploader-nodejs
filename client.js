@@ -1,5 +1,6 @@
 const net = require('net');
 const fs = require('fs');
+const path = require('path');
 
 const config = {
   CONNECTION_OBJECT: {
@@ -10,7 +11,12 @@ const config = {
 };
 
 const socket = net.createConnection(config.CONNECTION_OBJECT, async () => {
-  const rs = fs.createReadStream('./text.txt');
+  const filePath = process.argv[2];
+  const fileName = path.basename(filePath);
+
+  const rs = fs.createReadStream(filePath);
+
+  socket.write(`${JSON.stringify({ fileName })}`);
 
   rs.on('data', (data) => {
     if (!socket.write(data)) rs.pause();
